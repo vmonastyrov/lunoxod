@@ -1,0 +1,41 @@
+start model : { planet = { radius = 1738000, mass = 7.349999999999999e+22 },
+              ship = { mass = 2000, c = 3660, fuel = 300
+                      , persons = [{ firstName = "Vasilij",
+                                     lastName = "Perepelkin"
+                                     , mass = 150
+                                     , role = Pilot
+                                     , maxAcceleration = 29.43 }
+                                   ,{ firstName = "Sergej"
+                                      , lastName = "Perepelkin"
+                                      , mass = 100
+                                      , role = Passenger
+                                      , maxAcceleration = 29.43 }] }
+               , time = 28
+               , h = 127.13198033643548
+               , u = -32.24028689180676
+               , acc = 3.57421875
+               , engine = { mass = 100, time = 10, revers = True, startedTime = 0 } }
+
+newModel: { planet = { radius = 1738000, mass = 7.349999999999999e+22 }
+            , ship = { mass = 2000, c = 3660, fuel = 200
+                     , persons = [{ firstName = "Vasilij", lastName = "Perepelkin"
+                                    , mass = 150, role = Pilot, maxAcceleration = 29.43 }
+                                  ,{ firstName = "Sergej", lastName = "Perepelkin", mass = 100
+                                  , role = Passenger, maxAcceleration = 29.43 }] }
+            , time = 38
+            , h = -994.104831809523
+            , u = -192.00707553738494
+            , acc = 14.352941176470589
+            , engine = { mass = 100, time = 10, revers = True, startedTime = 0 } }
+t = : -7.547388045515954
+finModle: { planet = { radius = 1738000, mass = 7.349999999999999e+22 }
+            , ship = { mass = 2000, c = 3660, fuel = 275.47388045515953
+                     , persons = [{ firstName = "Vasilij", lastName = "Perepelkin"
+                                    , mass = 150, role = Pilot, maxAcceleration = 29.43 }
+                                 ,{ firstName = "Sergej", lastName = "Perepelkin"
+                                    , mass = 100, role = Passenger, maxAcceleration = 29.43 }] }
+            , time = 30.452611954484045
+            , h = -16.73841755297451
+            , u = -66.98753514444431
+            , acc = 14.938775510204081
+            , engine = { mass = 100, time = 10, revers = True, startedTime = 0 } }

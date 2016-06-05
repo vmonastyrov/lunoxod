@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <!--Import Google Icon Font-->
+      <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <!--Import materialize.css-->
+      <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+
+      <!--Let browser know website is optimized for mobile-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    </head>
+
+    <body>
+        <nav>
+            <div class="container">
+              <div class="nav-wrapper">
+                <a href="#" class="brand-logo">Лунолет 1</a>
+              <ul class="right hide-on-med-and-down">
+                <li><a class="waves-effect waves-light btn modal-trigger" href="#newGame">Новая игра</a></li>
+      </ul>
+    </div>
+            </div>
+        </nav>
+      <div class="container">
+        <h2></h2>
+        <div id="lunolet"></div>
+<div class="slider">
+    <ul class="slides">
+      <li>
+        <img src="img/moon.jpg">
+      </li>
+      <li>
+        <img src="img/moon2.jpg">
+      </li>
+      <li>
+        <img src="img/moon4.jpg">
+      </li>
+      <li>
+        <img src="img/moon5.png">
+      </li>
+      <li>
+        <img src="img/moon1.jpg">
+      </li>
+    </ul>
+  </div>
+  <div id="landing" class="modal">
+    <div class="modal-content">
+      <h4>Вы прилунились!</h4>
+      <p id="msg"></p>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Закрыть</a>
+    </div>
+  </div>
+  <div id="newGame" class="modal">
+    <div class="modal-content">
+      <h4>Новая игра</h4>
+ <div class="row">
+    <form class="col s12">
+      <div class="row">
+        <div class="col s12">
+          <h5>Команда</h5>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s6">
+          <input id="weight" type="text" value="150.0" class="validate">
+          <label for="weight">Вес космонавтов</label>
+        </div>
+        <div class="input-field col s6">
+          <input id="maxAcc" value="29.43" type="text" class="validate">
+          <label for="maxAcc">Передельная перегрузка</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col s12">
+          <h5>Корабль</h5>
+        </div>
+      </div>
+      <div class="row">
+        <div class="input-field col s12">
+          <input id="fuel" type="text" value="125.0" class="validate">
+          <label for="email">Топливо в кг.</label>
+        </div>
+      </div>
+    </form>
+  </div>     
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Закрыть</a>
+      <a id="startNewGame" href="#!" class=" modal-action waves-effect waves-green btn">Начать игру</a>
+    </div>
+  </div>
+</div>
+      <!--Import jQuery before materialize.js-->
+      <!-- script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script-->
+      <script type="text/javascript" src="js/jquery.min.js"></script>
+      <script type="text/javascript" src="js/materialize.min.js"></script>
+      <script type="text/javascript" src="js/lunoxod.js"></script>
+      <script>
+        $(document).ready(function () {
+            $('.slider').slider({full_width: true});
+            $('.modal-trigger').leanModal();
+
+            var node = document.getElementById('lunolet');
+            var app = Elm.Lunaxod.embed(node);
+
+            $("#startNewGame").bind("click", function() {
+                var obj = {};
+                obj["fuel"] = Number($("#fuel").val());
+                obj["maxAcc"] = Number($("#maxAcc").val());
+                obj["weight"] = Number($("#weight").val());
+                //result = $("#fuel").val() + "|" + $("#maxAcc").val() + "|" + $("#weight").val();
+                app.ports.startGame.send(obj);
+                $("#newGame").closeModal();
+            });
+
+            app.ports.dialog.subscribe(function(time) {
+                var $toastContent = $('<h4 class="red text-white">Перегрузка! Пилот ' +time+' секунд без сознания!</h4>');
+                if( time > 25) { 
+                $toastContent = $('<h4 class="red text-white">Перегрузка! После посадки к врачу а пока ' +time+' секунд без сознания!</h4>');
+                }
+                if( time > 50) { 
+                $toastContent = $('<h4 class="red text-white">Перегрузка вас убила :( ' +time+' секунд без сознания!</h4>');
+                }
+                Materialize.toast($toastContent, 1000, 'rounded');
+            });
+
+            app.ports.finish.subscribe(function(speed) {
+                var msg = "Отличное приземление!";
+                var sp  = Math.abs(speed);
+
+                if (sp > 5) {
+                    msg = "Жестковатая посадка!";
+                }
+
+                if (sp > 7.5) {
+                    msg = "Медики уже в пути, они вам нужны!";
+                }
+
+                if(sp > 10) {
+                    msg = 'Даже кораблю требуется ремонт. О экипаже можно промолчать.';
+                }
+
+                if(sp > 12.5) {
+                    msg = 'Смертельный исход Ж:**(';
+                }
+                $('#landing').find('#msg').html("Скорость: <b class='red-text'>" + speed + "</b> м/c <br \><h5>" + msg + "</h5>");
+                $('#landing').openModal();
+            });
+        });       
+
+      </script>
+    </body>
+  </html>
+<html>

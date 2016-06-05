@@ -1,0 +1,326 @@
+port module Lunaxod exposing (..)
+     
+import Html exposing (..)
+import Html.Attributes as H exposing (..)
+import Html.App as Html
+import Html.Events as E exposing (..)
+import Debug
+import Json.Decode as Json
+import String exposing (split)
+import Time exposing (Time, second)
+
+
+main =
+  Html.program { init = init
+               , view = view
+               , update = update
+               , subscriptions = subscriptions}
+
+
+-- MODEL
+
+type Role = Pilot | Passenger
+
+type alias Planet = { radius: Float, mass: Float }
+type alias Cosmonaut = {  firstName: String,
+                          lastName: String,
+                          mass: Float,
+                          role: Role,
+                          maxAcceleration: Float
+                       }                  
+type alias Spaceship  = {
+    mass: Float,
+    c: Float,
+    fuel: Float,
+    persons: List Cosmonaut  
+  }
+
+
+type alias Engine = {
+    mass: Float,
+    time: Float,
+    revers: Bool,
+    startedTime: Int,
+    started: Bool
+    }
+
+type alias Model = {
+      started: Bool,
+      planet:  Planet,
+      ship:    Spaceship,  
+      time:    Float,
+      h: Float,
+      u: Float,
+      acc: Float,
+      engine: Engine
+    }
+
+moon = Planet 1738000 (7.35 * (10 ^ 22))
+
+totalMass ship = ship.mass + ship.fuel + List.sum (List.map .mass ship.persons)
+takeFuel ship value = if (ship.fuel - value < 0) then
+                        {ship | fuel = 0}
+                      else
+                        {ship | fuel = ship.fuel - value}
+tank ship value = {ship | fuel = ship.fuel + value }                          
+addCosmonaut ship cosmonaut = { ship | persons = cosmonaut :: ship.persons }                          
+getPilot ship = List.filter (\p -> case p.role of
+                                     Pilot -> True
+                                     Passenger -> False) ship.persons
+init : (Model, Cmd Msg)
+init = (Model False moon (Spaceship 2000.0 3660.0 0.0 []) 0 0 0 0 (Engine 0 1 False 0 False), Cmd.none)
+
+freeFall : Planet -> Float -> Float
+freeFall planet height =
+  let h = planet.radius + height
+      g = 6.6740831 * (10 ^ -11)
+  in planet.mass * g / (h ^ 2) 
+
+-- UPDATE
+
+run mm q time =
+  let gp  = Debug.log "free fall" (freeFall mm.planet mm.h)
+      r   = if(mm.engine.revers) then -1 else 1
+      newAcc = q * mm.ship.c / totalMass mm.ship
+      newU   = mm.u + (r * newAcc - gp) * time     
+      newH   = mm.h + (mm.u + newU) * time / 2     
+      newTime = mm.time + time
+      newShip = takeFuel mm.ship (q * time)         
+      engine  = mm.engine
+      newEngine = if (newShip.fuel > mm.engine.mass)
+                  then engine
+                  else {engine | mass = newShip.fuel }
+      newModel  = { mm | ship = newShip, h = newH, u = newU, time = newTime, acc  = Debug.log "newAcc" newAcc, engine = newEngine }          
+  in if ( mm.h == 0 && newH < mm.h)
+       then {mm | ship = newShip, engine = newEngine}
+       else newModel
+
+type alias InitData = {fuel:Float, maxAcc: Float, weight: Float}
+port dialog : String -> Cmd msg
+port finish : String -> Cmd msg
+
+type Msg = ChangeTime String | Start | ChangeFuel String | ChangeRevers String
+           | IncTime | DecTime| IncFuel | DecFuel | StartGame InitData | Tick Time
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  let oEngine = model.engine
+  in case msg of
+        Tick time ->
+            let engine   = model.engine
+                stTime   = toFloat engine.startedTime
+                timeDiff = engine.time - stTime
+            in if (model.started == False) then (model, Cmd.none)
+                else
+                let q          = engine.mass / engine.time
+                    exTime     = if ( timeDiff > 1 ) then 1 else timeDiff
+                    newModel   = if (engine.started /= True) then run model 0 1 else run (run model q exTime) 0 (1 - exTime)
+                    newEngine  = if (engine.started /= True) then engine else if (stTime + 1 < engine.time)
+                                                                    then {engine | startedTime = engine.startedTime + 1}
+                                                                    else {engine | startedTime = 0, started = False}
+                    pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head (getPilot model.ship))
+                    maxAcc   = pilot.maxAcceleration
+                    divAcc   = newModel.acc - maxAcc  
+                in
+                   if (newModel.h < 0) then
+                     let r  = if(model.engine.revers) then -1 else 1
+                         gp = freeFall model.planet 0
+                         t  = 2 * newModel.h / (sqrt (newModel.u ^ 2 + 2 * newModel.h * (gp - newModel.acc * r)) - newModel.u)
+                         finModel = run {newModel | ship = tank model.ship (abs (t / model.engine.time * model.engine.mass))}
+                                        q t     
+                     in ({ finModel | h = 0, acc = 0, started = False }, finish (round2 finModel.u))
+                   else 
+                     if (newModel.acc > maxAcc)
+                     then ({newModel | engine = newEngine, acc = newModel.acc - 1}, dialog (round2 divAcc))
+                     else let m1 = Debug.log "newModel" newModel
+                          in ({newModel | engine = newEngine}, Cmd.none)
+
+        StartGame initData -> let cosmonaut = Cosmonaut "Vasilij" "Pupkin" initData.weight Pilot  initData.maxAcc
+                                  ship = takeFuel (addCosmonaut model.ship cosmonaut) 3500
+                              in  ({model | ship = tank ship initData.fuel, u = 0, h = 0, time = 0, acc = 0 }, Cmd.none)
+
+        ChangeFuel value -> let val =  Result.withDefault model.ship.fuel (String.toFloat value)
+                                newEngine = if (val > model.ship.fuel)
+                                            then {oEngine | mass = model.ship.fuel}
+                                            else {oEngine | mass = val}
+                            in ({ model  | engine = newEngine}, Cmd.none)
+
+        IncFuel -> let fuelMax = if (model.ship.fuel > 100) then 100 else model.ship.fuel
+                       newEngine  = if (model.engine.mass + 1 > fuelMax)
+                                    then {oEngine | mass = fuelMax }
+                                    else {oEngine | mass = (model.engine.mass + 1)}
+                   in ({ model  | engine = newEngine}, Cmd.none)
+
+        DecFuel -> let newEngine = if (model.engine.mass - 1 < 0)
+                                   then {oEngine | mass = 0}
+                                   else {oEngine | mass = (model.engine.mass - 1)}
+                   in ({ model  | engine = newEngine}, Cmd.none)
+
+        IncTime -> let newEngine =  if (model.engine.time + 1 > 60)
+                                    then {oEngine | time = 100}
+                                    else {oEngine | time = (oEngine.time + 1)}
+                   in ({ model  | engine = newEngine}, Cmd.none)
+
+        DecTime -> let newEngine = if (model.engine.time - 1 < 0.7)
+                                   then {oEngine | time = 0.7}
+                                   else {oEngine | time = (model.engine.time - 1)}
+                   in ({ model  | engine = newEngine}, Cmd.none)
+
+        ChangeTime value -> let val = Result.withDefault 0.7 (String.toFloat value)
+                                newEngine = {oEngine | time = val}
+                            in  ({ model  | engine = newEngine}, Cmd.none)
+
+        ChangeRevers value -> let newEngine =  if ( model.engine.revers ) 
+                                               then {oEngine | revers = False }
+                                               else {oEngine | revers = True }
+                              in ({ model  | engine = newEngine}, Cmd.none)
+        Start -> let newEngine = {oEngine | started = True}
+                 in ({model | started = True, engine = newEngine}, Cmd.none)
+
+--    Start -> let q        = model.engine.mass / model.engine.time
+--                 newModel = run (Debug.log "start model " model) q model.engine.time
+--                 pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head (getPilot model.ship))
+--                 maxAcc   = pilot.maxAcceleration
+--                 divAcc   = newModel.acc - maxAcc  
+--             in
+--               if (newModel.h < 0) then
+--                 let r  = if(model.engine.revers) then -1 else 1
+--                     gp = freeFall model.planet 0
+--                     t  = 2 * newModel.h / (sqrt (newModel.u ^ 2 + 2 * newModel.h * (gp - newModel.acc * r)) - newModel.u)
+--                     finModel = run (Debug.log "newModel"
+--                                       {newModel | ship = tank
+--                                          model.ship
+--                                          (abs (t / model.engine.time * model.engine.mass))})
+--                                     q (Debug.log "t = " t)     
+--                 in
+--                   ({ finModel | h = 0 }, finish (round2 finModel.u))
+--               else 
+--                 if (newModel.acc > maxAcc) then
+--                    (run newModel 0 divAcc, dialog (round2 divAcc))
+--                 else
+--                    (newModel, Cmd.none)
+
+-- VIEW
+
+round2 val = toString (toFloat (floor (100 * val)) / 100)
+
+infoView model = div [class "col s4"] [
+        div [class "row"] [ div [class "col s6"] [text "Время полета" ]
+                ,div [class "col s6"] [b [] [text (round2 model.time)] , text " c." ]],
+        div [class "row"] [ div [class "col s6"] [text "Топливо" ],
+                div [class "col s6"] [b [] [text (round2 model.ship.fuel)] , text " кг." ]],
+        div [class "row"] [ div [class "col s6"] [text "Высота" ],
+                div [class "col s6"] [b [] [text (round2 model.h)] , text " м."] ],
+        div [class "row"] [ div [class "col s6"] [text "Ускорение" ],
+                div [class "col s6"] [b [] [text (round2 model.acc)] , text " м/c2"] ],
+        div [class "row"] [ div [class "col s6"] [text "Скорость" ],
+                div [class "col s6"] [b [] [text (round2 model.u)] , text " м/с"] ]
+    ]
+massEngineView model = 
+    div [class "row valign-wrapper"] [
+         div [class "col s2 valign chip"]
+             [ text "Расход: "
+             , b [class "large"] [text (toString model.engine.mass)]
+             , text " kr."]
+       , div [ class "col s10 valign"]
+             [ div [class "row valign-wrapper"]
+                   [ div [class "col s1 valign"]
+                         [a [class "btn-floating", onClick DecFuel] [i [class "material-icons"][text "fast_rewind"]]]
+                   , div [class "col s1 valign"] [text "0"]
+                   , div [class "col s8 valign"]
+                         [ p [class "range-field"]
+                             [input [ type' "range"
+                                        , H.min "0"
+                                        , H.max "100"
+                                        , value (toString model.engine.mass)
+                                        , on "change" (Json.map ChangeFuel targetValue) 
+                                    ] []
+                             ]
+                         ]
+                  , div [class "col s1 valign"] [text "100"]
+                  , div [class "col s1 valign"][a [class "btn-floating", onClick IncFuel] [i [class "material-icons"][text "fast_forward"]]]
+                  ]
+           ]
+   ]
+
+timeEngineView model = div [class "row valign-wrapper"] [
+  div [class "col s2 valign chip"]
+    [text "За время: "
+    ,b [] [text (toString model.engine.time)]
+    ,text " c."]
+  , div [class "col s10 valign"] [
+      div [class "row valign-wrapper"]
+        [ div [class "col s1 valign"]
+              [a [class "btn-floating", onClick DecTime] [i [class "material-icons"][text "fast_rewind"]]]
+          , div [class "col s1 valign"] [text "0.7"]
+          , div[class "col s8 valign"]
+            [p [class "range-field"]
+                [ input [ type' "range"
+                        , H.min "0.7"
+                        , H.max "60"
+                        , H.step "0.1"
+                        , value (toString model.engine.time)
+                        , on "change" (Json.map ChangeTime targetValue) 
+                    ] []
+                ]
+            ]
+          , div [class "col s1 valign"] [text "60"]
+          , div [class "col s1 valign"][a [class "btn-floating", onClick IncTime] [i [class "material-icons"][text "fast_forward"]]]
+       ]
+    ]
+ ]
+reversEngineView model = div [class "row"] [
+    div [class "col s2 chip"] [text "Реверс тяги"]
+  , div [class "col s10"]
+    [ div [class "switch"]
+      [ label []
+         [   text "Выкл."
+           , input
+               [  type' "checkbox"
+                , checked model.engine.revers
+                , on "change" (Json.map ChangeRevers targetValue)]
+               []
+        , span [class "lever"] []
+        , text "Вкл."]
+     ]
+    ]
+  ]
+  
+isShipNotStarted model = model.time == 0 && model.engine.mass == 0 || model.time /= 0 && model.h <= 0
+  
+startEngineView model =
+  let defaultClass = "waves-effect waves-light btn-large red"
+      shipNotStarted  = isShipNotStarted model
+      btnClass = if (shipNotStarted) then defaultClass ++ " disabled" else defaultClass
+  in                          
+    div [class "row"]
+    [ div [class "col s12"]
+        [button
+            [ onClick Start
+             , class btnClass
+             , disabled shipNotStarted
+            ]
+            [ text "ПУСК" ]
+        ]
+    ]
+  
+view : Model -> Html Msg
+view model =
+  div [class "row"] [
+     infoView model
+     , div [class "col s8"]
+       [ massEngineView model
+       , timeEngineView model
+       , reversEngineView model
+       , startEngineView model
+       ]
+  ] 
+
+-- SUBSCRIPTIONS
+
+port startGame : (InitData -> msg) -> Sub msg
+
+subscriptions : Model -> Sub Msg
+subscriptions model = Sub.batch [ startGame StartGame
+                                  , Time.every second Tick
+                                ]
