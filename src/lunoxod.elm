@@ -120,9 +120,12 @@ update msg model =
                                  else let firstRun  = run model q exTime
                                           secondRun = if (exTime /= 1) then run firstRun 0 (1 - exTime) else firstRun
                                       in {secondRun | acc = firstRun.acc}
-                    newEngine  = if (engine.started /= True) then engine else if (stTime + 1 < engine.time)
-                                                                    then {engine | startedTime = engine.startedTime + 1}
-                                                                    else {engine | startedTime = 0, started = False}
+                    newEngine  =
+                      let newModelEngine = newModel.engine
+                      in if (newModelEngine.started /= True) then newModel.engine
+                         else if (stTime + 1 < newModelEngine.time)
+                              then {newModelEngine | startedTime = engine.startedTime + 1}
+                              else {newModelEngine | startedTime = 0, started = False}
                     pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head (getPilot model.ship))
                     maxAcc   = pilot.maxAcceleration
                     divAcc   = newModel.acc - maxAcc  
@@ -186,51 +189,32 @@ update msg model =
         Start -> let newEngine = {oEngine | started = True}
                  in ({model | started = True, engine = newEngine}, Cmd.none)
 
---    Start -> let q        = model.engine.mass / model.engine.time
---                 newModel = run (Debug.log "start model " model) q model.engine.time
---                 pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head (getPilot model.ship))
---                 maxAcc   = pilot.maxAcceleration
---                 divAcc   = newModel.acc - maxAcc  
---             in
---               if (newModel.h < 0) then
---                 let r  = if(model.engine.revers) then -1 else 1
---                     gp = freeFall model.planet 0
---                     t  = 2 * newModel.h / (sqrt (newModel.u ^ 2 + 2 * newModel.h * (gp - newModel.acc * r)) - newModel.u)
---                     finModel = run (Debug.log "newModel"
---                                       {newModel | ship = tank
---                                          model.ship
---                                          (abs (t / model.engine.time * model.engine.mass))})
---                                     q (Debug.log "t = " t)     
---                 in
---                   ({ finModel | h = 0 }, finish (round2 finModel.u))
---               else 
---                 if (newModel.acc > maxAcc) then
---                    (run newModel 0 divAcc, dialog (round2 divAcc))
---                 else
---                    (newModel, Cmd.none)
-
 -- VIEW
 
 round2 val = toString (toFloat (floor (100 * val)) / 100)
 
-infoView model = div [class "col s4"] [
+infoView model =
+  let revers = if(model.engine.revers) then "revers" else ""
+      srcImg = if (model.acc == 0 ) then "img/ship" ++ revers else "img/shipEngine" ++ revers 
+  in div [class "col s4"] [
         div [class "row"] [ div [class "col s6"] [text "Время полета" ]
                 ,div [class "col s6"] [b [] [text (round2 model.time)] , text " c." ]],
         div [class "row"] [ div [class "col s6"] [text "Топливо" ],
                 div [class "col s6"] [b [] [text (round2 model.ship.fuel)] , text " кг." ]],
         div [class "row"] [ div [class "col s6"] [text "Высота" ],
                 div [class "col s6"] [b [] [text (round2 model.h)] , text " м."] ],
-        div [class "row"] [ div [class "col s6"] [text "Ускорение" ],
-                div [class "col s6"] [b [] [text (round2 model.acc)] , text " м/c2"] ],
         div [class "row"] [ div [class "col s6"] [text "Скорость" ],
-                div [class "col s6"] [b [] [text (round2 model.u)] , text " м/с"] ]
+                div [class "col s6"] [b [] [text (round2 model.u)] , text " м/с"] ],
+        div [class "row"] [ div [class "col s12 offset-s6"] [img [src (srcImg ++ ".png")] []]]
+                
     ]
-massEngineView model = 
-    div [class "row valign-wrapper"] [
+massEngineView model =
+  let newModel = Debug.log "massEngineView" model 
+  in  div [class "row valign-wrapper"] [
          div [class "col s2 valign chip"]
              [ text "Расход: "
              , b [class "large"] [text (toString model.engine.mass)]
-             , text " kr."]
+             , text " кг."]
        , div [ class "col s10 valign"]
              [ div [class "row valign-wrapper"]
                    [ div [class "col s1 valign"]
@@ -278,6 +262,7 @@ timeEngineView model = div [class "row valign-wrapper"] [
        ]
     ]
  ]
+
 reversEngineView model = div [class "row"] [
     div [class "col s2 chip"] [text "Реверс тяги"]
   , div [class "col s10"]
@@ -295,19 +280,18 @@ reversEngineView model = div [class "row"] [
     ]
   ]
   
-isShipNotStarted model = model.time == 0 && model.engine.mass == 0 || model.time /= 0 && model.h <= 0
+engineNotActive model = (model.started == False && model.u /= 0) || (model.started == False &&  model.engine.mass == 0) || model.acc /= 0 
   
 startEngineView model =
   let defaultClass = "waves-effect waves-light btn-large red"
-      shipNotStarted  = isShipNotStarted model
-      btnClass = if (shipNotStarted) then defaultClass ++ " disabled" else defaultClass
+      btnClass = if (engineNotActive model) then defaultClass ++ " disabled" else defaultClass
   in                          
     div [class "row"]
     [ div [class "col s12"]
         [button
             [ onClick Start
              , class btnClass
-             , disabled shipNotStarted
+             , disabled (engineNotActive model)
             ]
             [ text "ПУСК" ]
         ]

@@ -7668,8 +7668,8 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-var _user$project$Lunaxod$isShipNotStarted = function (model) {
-	return (_elm_lang$core$Native_Utils.eq(model.time, 0) && _elm_lang$core$Native_Utils.eq(model.engine.mass, 0)) || ((!_elm_lang$core$Native_Utils.eq(model.time, 0)) && (_elm_lang$core$Native_Utils.cmp(model.h, 0) < 1));
+var _user$project$Lunaxod$engineNotActive = function (model) {
+	return (_elm_lang$core$Native_Utils.eq(model.started, false) && (!_elm_lang$core$Native_Utils.eq(model.u, 0))) || ((_elm_lang$core$Native_Utils.eq(model.started, false) && _elm_lang$core$Native_Utils.eq(model.engine.mass, 0)) || (!_elm_lang$core$Native_Utils.eq(model.acc, 0)));
 };
 var _user$project$Lunaxod$round2 = function (val) {
 	return _elm_lang$core$Basics$toString(
@@ -7677,6 +7677,8 @@ var _user$project$Lunaxod$round2 = function (val) {
 			_elm_lang$core$Basics$floor(100 * val)) / 100);
 };
 var _user$project$Lunaxod$infoView = function (model) {
+	var revers = model.engine.revers ? 'revers' : '';
+	var srcImg = _elm_lang$core$Native_Utils.eq(model.acc, 0) ? A2(_elm_lang$core$Basics_ops['++'], 'img/ship', revers) : A2(_elm_lang$core$Basics_ops['++'], 'img/shipEngine', revers);
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -7815,44 +7817,6 @@ var _user$project$Lunaxod$infoView = function (model) {
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html$text('Ускорение')
-							])),
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('col s6')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$b,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text(
-										_user$project$Lunaxod$round2(model.acc))
-									])),
-								_elm_lang$html$Html$text(' м/c2')
-							]))
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('row')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('col s6')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
 								_elm_lang$html$Html$text('Скорость')
 							])),
 						A2(
@@ -7873,6 +7837,33 @@ var _user$project$Lunaxod$infoView = function (model) {
 										_user$project$Lunaxod$round2(model.u))
 									])),
 								_elm_lang$html$Html$text(' м/с')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('row')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('col s12 offset-s6')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$img,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$src(
+										A2(_elm_lang$core$Basics_ops['++'], srcImg, '.png'))
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[]))
 							]))
 					]))
 			]));
@@ -8053,11 +8044,6 @@ var _user$project$Lunaxod$update = F2(
 						_elm_lang$core$List$head(
 							_user$project$Lunaxod$getPilot(model.ship)));
 					var maxAcc = pilot.maxAcceleration;
-					var newEngine = (!_elm_lang$core$Native_Utils.eq(engine.started, true)) ? engine : ((_elm_lang$core$Native_Utils.cmp(stTime + 1, engine.time) < 0) ? _elm_lang$core$Native_Utils.update(
-						engine,
-						{startedTime: engine.startedTime + 1}) : _elm_lang$core$Native_Utils.update(
-						engine,
-						{startedTime: 0, started: false}));
 					var exTime = (_elm_lang$core$Native_Utils.cmp(timeDiff, 1) > 0) ? 1 : timeDiff;
 					var q = engine.mass / engine.time;
 					var newModel = function () {
@@ -8070,6 +8056,14 @@ var _user$project$Lunaxod$update = F2(
 								secondRun,
 								{acc: firstRun.acc});
 						}
+					}();
+					var newEngine = function () {
+						var newModelEngine = newModel.engine;
+						return (!_elm_lang$core$Native_Utils.eq(newModelEngine.started, true)) ? newModel.engine : ((_elm_lang$core$Native_Utils.cmp(stTime + 1, newModelEngine.time) < 0) ? _elm_lang$core$Native_Utils.update(
+							newModelEngine,
+							{startedTime: engine.startedTime + 1}) : _elm_lang$core$Native_Utils.update(
+							newModelEngine,
+							{startedTime: 0, started: false}));
 					}();
 					var divAcc = newModel.acc - maxAcc;
 					if (_elm_lang$core$Native_Utils.cmp(newModel.h, 0) < 0) {
@@ -8358,6 +8352,7 @@ var _user$project$Lunaxod$ChangeFuel = function (a) {
 	return {ctor: 'ChangeFuel', _0: a};
 };
 var _user$project$Lunaxod$massEngineView = function (model) {
+	var newModel = A2(_elm_lang$core$Debug$log, 'massEngineView', model);
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8386,7 +8381,7 @@ var _user$project$Lunaxod$massEngineView = function (model) {
 								_elm_lang$html$Html$text(
 								_elm_lang$core$Basics$toString(model.engine.mass))
 							])),
-						_elm_lang$html$Html$text(' kr.')
+						_elm_lang$html$Html$text(' кг.')
 					])),
 				A2(
 				_elm_lang$html$Html$div,
@@ -8522,9 +8517,8 @@ var _user$project$Lunaxod$massEngineView = function (model) {
 };
 var _user$project$Lunaxod$Start = {ctor: 'Start'};
 var _user$project$Lunaxod$startEngineView = function (model) {
-	var shipNotStarted = _user$project$Lunaxod$isShipNotStarted(model);
 	var defaultClass = 'waves-effect waves-light btn-large red';
-	var btnClass = shipNotStarted ? A2(_elm_lang$core$Basics_ops['++'], defaultClass, ' disabled') : defaultClass;
+	var btnClass = _user$project$Lunaxod$engineNotActive(model) ? A2(_elm_lang$core$Basics_ops['++'], defaultClass, ' disabled') : defaultClass;
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8547,7 +8541,8 @@ var _user$project$Lunaxod$startEngineView = function (model) {
 							[
 								_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$Start),
 								_elm_lang$html$Html_Attributes$class(btnClass),
-								_elm_lang$html$Html_Attributes$disabled(shipNotStarted)
+								_elm_lang$html$Html_Attributes$disabled(
+								_user$project$Lunaxod$engineNotActive(model))
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
