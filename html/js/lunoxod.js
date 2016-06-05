@@ -7896,6 +7896,14 @@ var _user$project$Lunaxod$getPilot = function (ship) {
 		},
 		ship.persons);
 };
+var _user$project$Lunaxod$unboard = function (ship) {
+	return _elm_lang$core$Native_Utils.update(
+		ship,
+		{
+			persons: _elm_lang$core$Native_List.fromArray(
+				[])
+		});
+};
 var _user$project$Lunaxod$addCosmonaut = F2(
 	function (ship, cosmonaut) {
 		return _elm_lang$core$Native_Utils.update(
@@ -7937,22 +7945,12 @@ var _user$project$Lunaxod$run = F3(
 		var newTime = mm.time + time;
 		var newAcc = (q * mm.ship.c) / _user$project$Lunaxod$totalMass(mm.ship);
 		var r = mm.engine.revers ? -1 : 1;
-		var gp = A2(
-			_elm_lang$core$Debug$log,
-			'free fall',
-			A2(_user$project$Lunaxod$freeFall, mm.planet, mm.h));
+		var gp = A2(_user$project$Lunaxod$freeFall, mm.planet, mm.h);
 		var newU = mm.u + (((r * newAcc) - gp) * time);
 		var newH = mm.h + (((mm.u + newU) * time) / 2);
 		var newModel = _elm_lang$core$Native_Utils.update(
 			mm,
-			{
-				ship: newShip,
-				h: newH,
-				u: newU,
-				time: newTime,
-				acc: A2(_elm_lang$core$Debug$log, 'newAcc', newAcc),
-				engine: newEngine
-			});
+			{ship: newShip, h: newH, u: newU, time: newTime, acc: newAcc, engine: newEngine});
 		return (_elm_lang$core$Native_Utils.eq(mm.h, 0) && (_elm_lang$core$Native_Utils.cmp(newH, mm.h) < 0)) ? _elm_lang$core$Native_Utils.update(
 			mm,
 			{ship: newShip, engine: newEngine}) : newModel;
@@ -8006,15 +8004,16 @@ var _user$project$Lunaxod$Engine = F5(
 	function (a, b, c, d, e) {
 		return {mass: a, time: b, revers: c, startedTime: d, started: e};
 	});
-var _user$project$Lunaxod$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {started: a, planet: b, ship: c, time: d, h: e, u: f, acc: g, engine: h};
+var _user$project$Lunaxod$Model = F9(
+	function (a, b, c, d, e, f, g, h, i) {
+		return {started: a, uncons: b, planet: c, ship: d, time: e, h: f, u: g, acc: h, engine: i};
 	});
 var _user$project$Lunaxod$init = {
 	ctor: '_Tuple2',
-	_0: A8(
+	_0: A9(
 		_user$project$Lunaxod$Model,
 		false,
+		0,
 		_user$project$Lunaxod$moon,
 		A4(
 			_user$project$Lunaxod$Spaceship,
@@ -8061,11 +8060,17 @@ var _user$project$Lunaxod$update = F2(
 						{startedTime: 0, started: false}));
 					var exTime = (_elm_lang$core$Native_Utils.cmp(timeDiff, 1) > 0) ? 1 : timeDiff;
 					var q = engine.mass / engine.time;
-					var newModel = (!_elm_lang$core$Native_Utils.eq(engine.started, true)) ? A3(_user$project$Lunaxod$run, model, 0, 1) : A3(
-						_user$project$Lunaxod$run,
-						A3(_user$project$Lunaxod$run, model, q, exTime),
-						0,
-						1 - exTime);
+					var newModel = function () {
+						if ((!_elm_lang$core$Native_Utils.eq(engine.started, true)) || (_elm_lang$core$Native_Utils.cmp(stTime + 1, engine.time) > 0)) {
+							return A3(_user$project$Lunaxod$run, model, 0, 1);
+						} else {
+							var firstRun = A3(_user$project$Lunaxod$run, model, q, exTime);
+							var secondRun = (!_elm_lang$core$Native_Utils.eq(exTime, 1)) ? A3(_user$project$Lunaxod$run, firstRun, 0, 1 - exTime) : firstRun;
+							return _elm_lang$core$Native_Utils.update(
+								secondRun,
+								{acc: firstRun.acc});
+						}
+					}();
 					var divAcc = newModel.acc - maxAcc;
 					if (_elm_lang$core$Native_Utils.cmp(newModel.h, 0) < 0) {
 						var gp = A2(_user$project$Lunaxod$freeFall, model.planet, 0);
@@ -8093,39 +8098,53 @@ var _user$project$Lunaxod$update = F2(
 								_user$project$Lunaxod$round2(finModel.u))
 						};
 					} else {
-						if (_elm_lang$core$Native_Utils.cmp(newModel.acc, maxAcc) > 0) {
-							return {
-								ctor: '_Tuple2',
-								_0: _elm_lang$core$Native_Utils.update(
-									newModel,
-									{engine: newEngine, acc: newModel.acc - 1}),
-								_1: _user$project$Lunaxod$dialog(
-									_user$project$Lunaxod$round2(divAcc))
-							};
-						} else {
-							var m1 = A2(_elm_lang$core$Debug$log, 'newModel', newModel);
-							return {
-								ctor: '_Tuple2',
-								_0: _elm_lang$core$Native_Utils.update(
-									newModel,
-									{engine: newEngine}),
-								_1: _elm_lang$core$Platform_Cmd$none
-							};
-						}
+						var m1 = A2(_elm_lang$core$Debug$log, 'newModel', newModel);
+						return (_elm_lang$core$Native_Utils.cmp(newModel.acc, maxAcc) > 0) ? {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								newModel,
+								{engine: newEngine, uncons: divAcc}),
+							_1: _user$project$Lunaxod$dialog(1)
+						} : (_elm_lang$core$Native_Utils.eq(model.uncons, 0) ? {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								newModel,
+								{engine: newEngine}),
+							_1: _elm_lang$core$Platform_Cmd$none
+						} : ((_elm_lang$core$Native_Utils.cmp(model.uncons - 1, 0) > 0) ? {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								newModel,
+								{engine: newEngine, uncons: model.uncons - 1}),
+							_1: _user$project$Lunaxod$dialog(1)
+						} : {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								newModel,
+								{engine: newEngine, uncons: 0}),
+							_1: _user$project$Lunaxod$dialog(0)
+						}));
 					}
 				}
 			case 'StartGame':
 				var _p2 = _p1._0;
+				var newEngine = _elm_lang$core$Native_Utils.update(
+					oEngine,
+					{time: 1, mass: 0, started: false, revers: false, startedTime: 0});
 				var cosmonaut = A5(_user$project$Lunaxod$Cosmonaut, 'Vasilij', 'Pupkin', _p2.weight, _user$project$Lunaxod$Pilot, _p2.maxAcc);
 				var ship = A2(
 					_user$project$Lunaxod$takeFuel,
-					A2(_user$project$Lunaxod$addCosmonaut, model.ship, cosmonaut),
+					A2(
+						_user$project$Lunaxod$addCosmonaut,
+						_user$project$Lunaxod$unboard(model.ship),
+						cosmonaut),
 					3500);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
+							started: false,
 							ship: A2(_user$project$Lunaxod$tank, ship, _p2.fuel),
 							u: 0,
 							h: 0,

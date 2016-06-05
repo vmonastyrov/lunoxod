@@ -46,6 +46,7 @@ type alias Engine = {
 
 type alias Model = {
       started: Bool,
+      uncons:   Float,
       planet:  Planet,
       ship:    Spaceship,  
       time:    Float,
@@ -64,11 +65,12 @@ takeFuel ship value = if (ship.fuel - value < 0) then
                         {ship | fuel = ship.fuel - value}
 tank ship value = {ship | fuel = ship.fuel + value }                          
 addCosmonaut ship cosmonaut = { ship | persons = cosmonaut :: ship.persons }                          
+unboard ship = { ship | persons = [] }
 getPilot ship = List.filter (\p -> case p.role of
                                      Pilot -> True
                                      Passenger -> False) ship.persons
 init : (Model, Cmd Msg)
-init = (Model False moon (Spaceship 2000.0 3660.0 0.0 []) 0 0 0 0 (Engine 0 1 False 0 False), Cmd.none)
+init = (Model False 0 moon (Spaceship 2000.0 3660.0 0.0 []) 0 0 0 0 (Engine 0 1 False 0 False), Cmd.none)
 
 freeFall : Planet -> Float -> Float
 freeFall planet height =
@@ -79,8 +81,8 @@ freeFall planet height =
 -- UPDATE
 
 run mm q time =
-  let gp  = Debug.log "free fall" (freeFall mm.planet mm.h)
-      r   = if(mm.engine.revers) then -1 else 1
+  let gp  = freeFall mm.planet mm.h
+      r   = if (mm.engine.revers) then -1 else 1
       newAcc = q * mm.ship.c / totalMass mm.ship
       newU   = mm.u + (r * newAcc - gp) * time     
       newH   = mm.h + (mm.u + newU) * time / 2     
@@ -90,13 +92,13 @@ run mm q time =
       newEngine = if (newShip.fuel > mm.engine.mass)
                   then engine
                   else {engine | mass = newShip.fuel }
-      newModel  = { mm | ship = newShip, h = newH, u = newU, time = newTime, acc  = Debug.log "newAcc" newAcc, engine = newEngine }          
+      newModel  = { mm | ship = newShip, h = newH, u = newU, time = newTime, acc  = newAcc, engine = newEngine }          
   in if ( mm.h == 0 && newH < mm.h)
        then {mm | ship = newShip, engine = newEngine}
        else newModel
 
 type alias InitData = {fuel:Float, maxAcc: Float, weight: Float}
-port dialog : String -> Cmd msg
+port dialog : Int -> Cmd msg
 port finish : String -> Cmd msg
 
 type Msg = ChangeTime String | Start | ChangeFuel String | ChangeRevers String
@@ -111,10 +113,13 @@ update msg model =
                 stTime   = toFloat engine.startedTime
                 timeDiff = engine.time - stTime
             in if (model.started == False) then (model, Cmd.none)
-                else
+               else
                 let q          = engine.mass / engine.time
                     exTime     = if ( timeDiff > 1 ) then 1 else timeDiff
-                    newModel   = if (engine.started /= True) then run model 0 1 else run (run model q exTime) 0 (1 - exTime)
+                    newModel   = if (engine.started /= True || stTime + 1 > engine.time) then run model 0 1
+                                 else let firstRun  = run model q exTime
+                                          secondRun = if (exTime /= 1) then run firstRun 0 (1 - exTime) else firstRun
+                                      in {secondRun | acc = firstRun.acc}
                     newEngine  = if (engine.started /= True) then engine else if (stTime + 1 < engine.time)
                                                                     then {engine | startedTime = engine.startedTime + 1}
                                                                     else {engine | startedTime = 0, started = False}
@@ -129,15 +134,19 @@ update msg model =
                          finModel = run {newModel | ship = tank model.ship (abs (t / model.engine.time * model.engine.mass))}
                                         q t     
                      in ({ finModel | h = 0, acc = 0, started = False }, finish (round2 finModel.u))
-                   else 
-                     if (newModel.acc > maxAcc)
-                     then ({newModel | engine = newEngine, acc = newModel.acc - 1}, dialog (round2 divAcc))
-                     else let m1 = Debug.log "newModel" newModel
-                          in ({newModel | engine = newEngine}, Cmd.none)
+                   else
+                     let m1 = Debug.log "newModel" newModel
+                     in if (newModel.acc > maxAcc)
+                        then ({newModel | engine = newEngine, uncons = divAcc}, dialog 1)
+                        else if (model.uncons == 0) then ({newModel | engine = newEngine}, Cmd.none)
+                             else if (model.uncons - 1 > 0)
+                                  then ({newModel | engine = newEngine, uncons = model.uncons - 1}, dialog 1)
+                                  else ({newModel | engine = newEngine, uncons = 0}, dialog 0)
 
         StartGame initData -> let cosmonaut = Cosmonaut "Vasilij" "Pupkin" initData.weight Pilot  initData.maxAcc
-                                  ship = takeFuel (addCosmonaut model.ship cosmonaut) 3500
-                              in  ({model | ship = tank ship initData.fuel, u = 0, h = 0, time = 0, acc = 0 }, Cmd.none)
+                                  newEngine = {oEngine | time = 1, mass = 0, started = False, revers = False, startedTime = 0}
+                                  ship = takeFuel (addCosmonaut (unboard model.ship) cosmonaut) 3500
+                              in  ({model | started = False, ship = tank ship initData.fuel, u = 0, h = 0, time = 0, acc = 0 }, Cmd.none)
 
         ChangeFuel value -> let val =  Result.withDefault model.ship.fuel (String.toFloat value)
                                 newEngine = if (val > model.ship.fuel)

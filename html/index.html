@@ -53,6 +53,12 @@
       <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Закрыть</a>
     </div>
   </div>
+  <div id="uncons" class="modal">
+    <div class="modal-content">
+      <h4>Перегрузка!</h4>
+      <p>Вы без сознания!</p>
+    </div>
+  </div>
   <div id="newGame" class="modal">
     <div class="modal-content">
       <h4>Новая игра</h4>
@@ -65,7 +71,7 @@
       </div>
       <div class="row">
         <div class="input-field col s6">
-          <input id="weight" type="text" value="150.0" class="validate">
+          <input id="weight" type="text" value="250.0" class="validate">
           <label for="weight">Вес космонавтов</label>
         </div>
         <div class="input-field col s6">
@@ -80,7 +86,7 @@
       </div>
       <div class="row">
         <div class="input-field col s12">
-          <input id="fuel" type="text" value="125.0" class="validate">
+          <input id="fuel" type="text" value="400" class="validate">
           <label for="email">Топливо в кг.</label>
         </div>
       </div>
@@ -111,20 +117,16 @@
                 obj["fuel"] = Number($("#fuel").val());
                 obj["maxAcc"] = Number($("#maxAcc").val());
                 obj["weight"] = Number($("#weight").val());
-                //result = $("#fuel").val() + "|" + $("#maxAcc").val() + "|" + $("#weight").val();
                 app.ports.startGame.send(obj);
                 $("#newGame").closeModal();
             });
 
             app.ports.dialog.subscribe(function(time) {
-                var $toastContent = $('<h4 class="red text-white">Перегрузка! Пилот ' +time+' секунд без сознания!</h4>');
-                if( time > 25) { 
-                $toastContent = $('<h4 class="red text-white">Перегрузка! После посадки к врачу а пока ' +time+' секунд без сознания!</h4>');
+                if (time == 0) {
+                  $("#uncons").closeModal();
+                } else {
+                  $("#uncons").openModal();
                 }
-                if( time > 50) { 
-                $toastContent = $('<h4 class="red text-white">Перегрузка вас убила :( ' +time+' секунд без сознания!</h4>');
-                }
-                Materialize.toast($toastContent, 1000, 'rounded');
             });
 
             app.ports.finish.subscribe(function(speed) {
