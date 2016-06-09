@@ -1,5 +1,5 @@
-port module Lunaxod exposing (..)
-     
+port module Lunoxod exposing (..)
+
 import Html exposing (..)
 import Html.Attributes as H exposing (..)
 import Html.App as Html
@@ -8,6 +8,7 @@ import Debug
 import Json.Decode as Json
 import String exposing (split)
 import Time exposing (Time, second)
+import Lunomodel exposing (..)
 
 
 main =
@@ -16,33 +17,7 @@ main =
                , update = update
                , subscriptions = subscriptions}
 
-
 -- MODEL
-
-type Role = Pilot | Passenger
-
-type alias Planet = { radius: Float, mass: Float }
-type alias Cosmonaut = {  firstName: String,
-                          lastName: String,
-                          mass: Float,
-                          role: Role,
-                          maxAcceleration: Float
-                       }                  
-type alias Spaceship  = {
-    mass: Float,
-    c: Float,
-    fuel: Float,
-    persons: List Cosmonaut  
-  }
-
-
-type alias Engine = {
-    mass: Float,
-    time: Float,
-    revers: Bool,
-    startedTime: Int,
-    started: Bool
-    }
 
 type alias Model = {
       started: Bool,
@@ -56,27 +31,8 @@ type alias Model = {
       engine: Engine
     }
 
-moon = Planet 1738000 (7.35 * (10 ^ 22))
-
-totalMass ship = ship.mass + ship.fuel + List.sum (List.map .mass ship.persons)
-takeFuel ship value = if (ship.fuel - value < 0) then
-                        {ship | fuel = 0}
-                      else
-                        {ship | fuel = ship.fuel - value}
-tank ship value = {ship | fuel = ship.fuel + value }                          
-addCosmonaut ship cosmonaut = { ship | persons = cosmonaut :: ship.persons }                          
-unboard ship = { ship | persons = [] }
-getPilot ship = List.filter (\p -> case p.role of
-                                     Pilot -> True
-                                     Passenger -> False) ship.persons
 init : (Model, Cmd Msg)
-init = (Model False 0 moon (Spaceship 2000.0 3660.0 0.0 []) 0 0 0 0 (Engine 0 1 False 0 False), Cmd.none)
-
-freeFall : Planet -> Float -> Float
-freeFall planet height =
-  let h = planet.radius + height
-      g = 6.6740831 * (10 ^ -11)
-  in planet.mass * g / (h ^ 2) 
+init = (Model False 0 moon (Spaceship 2000 3660 0 []) 0 0 0 0 (Engine 0 1 False 0 False), Cmd.none)
 
 -- UPDATE
 
@@ -104,54 +60,66 @@ port finish : String -> Cmd msg
 type Msg = ChangeTime String | Start | ChangeFuel String | ChangeRevers String
            | IncTime | DecTime| IncFuel | DecFuel | StartGame InitData | Tick Time
 
+type State = NotStarted | Landed | Unconscious Float | Flying
+
+getState: Model -> State
+getState model = let pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head <| getPilot model.ship)
+                     maxAcc   = pilot.maxAcceleration
+                     divAcc   = model.acc - maxAcc  
+                 in if (model.started == False) then NotStarted
+                    else if (model.h < 0) then Landed
+                        else if (divAcc > 0 ) then Unconscious divAcc
+                             else Flying
+                                  
+calcNewModel model =
+  let oEngine  = model.engine
+      stTime   = toFloat oEngine.startedTime
+      timeDiff = oEngine.time - stTime
+      q        = oEngine.mass / oEngine.time
+      exTime   = if ( timeDiff > 1 ) then 1 else timeDiff
+  in if (oEngine.started /= True || stTime + 1 > oEngine.time) then run model 0 1
+                     else let firstRun  = run model q exTime
+                              secondRun = if (exTime /= 1) then run firstRun 0 (1 - exTime) else firstRun
+                          in {secondRun | acc = firstRun.acc}
+
+calcNewEngine model oEngine =
+  let newModelEngine = model.engine
+      stTime   = toFloat oEngine.startedTime
+  in if (newModelEngine.started /= True) then model.engine
+  else if (stTime + 1 < newModelEngine.time)
+       then {newModelEngine | startedTime = oEngine.startedTime + 1}
+       else {newModelEngine | startedTime = 0, started = False}
+
+calcLanding model oEngine =
+  let r  = if (oEngine.revers) then -1 else 1
+      gp = freeFall model.planet 0
+      q  = oEngine.mass / oEngine.time
+      t  = 2 * model.h / (sqrt (model.u ^ 2 + 2 * model.h * (gp - model.acc * r)) - model.u)
+      in run {model | ship = tank model.ship (abs <| t / oEngine.time * oEngine.mass)} q t
+
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+update msg model =  
   let oEngine = model.engine
   in case msg of
         Tick time ->
-            let engine   = model.engine
-                stTime   = toFloat engine.startedTime
-                timeDiff = engine.time - stTime
-            in if (model.started == False) then (model, Cmd.none)
-               else
-                let q          = engine.mass / engine.time
-                    exTime     = if ( timeDiff > 1 ) then 1 else timeDiff
-                    newModel   = if (engine.started /= True || stTime + 1 > engine.time) then run model 0 1
-                                 else let firstRun  = run model q exTime
-                                          secondRun = if (exTime /= 1) then run firstRun 0 (1 - exTime) else firstRun
-                                      in {secondRun | acc = firstRun.acc}
-                    newEngine  =
-                      let newModelEngine = newModel.engine
-                      in if (newModelEngine.started /= True) then newModel.engine
-                         else if (stTime + 1 < newModelEngine.time)
-                              then {newModelEngine | startedTime = engine.startedTime + 1}
-                              else {newModelEngine | startedTime = 0, started = False}
-                    pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 * 9.81)) (List.head (getPilot model.ship))
-                    maxAcc   = pilot.maxAcceleration
-                    divAcc   = newModel.acc - maxAcc  
-                in
-                   if (newModel.h < 0) then
-                     let r  = if(model.engine.revers) then -1 else 1
-                         gp = freeFall model.planet 0
-                         t  = 2 * newModel.h / (sqrt (newModel.u ^ 2 + 2 * newModel.h * (gp - newModel.acc * r)) - newModel.u)
-                         finModel = run {newModel | ship = tank model.ship (abs (t / model.engine.time * model.engine.mass))}
-                                        q t     
-                     in ({ finModel | h = 0, acc = 0, started = False }, finish (round2 finModel.u))
-                   else
-                     let m1 = Debug.log "newModel" newModel
-                     in if (newModel.acc > maxAcc)
-                        then ({newModel | engine = newEngine, uncons = divAcc}, dialog 1)
-                        else if (model.uncons == 0) then ({newModel | engine = newEngine}, Cmd.none)
-                             else if (model.uncons - 1 > 0)
-                                  then ({newModel | engine = newEngine, uncons = model.uncons - 1}, dialog 1)
-                                  else ({newModel | engine = newEngine, uncons = 0}, dialog 0)
+            let newModel   = calcNewModel model
+                newEngine  = calcNewEngine newModel oEngine
+            in case (getState newModel) of
+                 NotStarted -> (model, Cmd.none)
+                 Landed     -> let finModel = calcLanding newModel oEngine    
+                               in ({ finModel | h = 0, acc = 0, started = False }, finish (round2 finModel.u))
+                 Unconscious divAcc -> ({newModel | engine = newEngine, uncons = divAcc}, dialog 1)
+                 Flying -> if (model.uncons == 0) then ({newModel | engine = newEngine}, Cmd.none)
+                           else if (model.uncons - 1 > 0)
+                                then ({newModel | engine = newEngine, uncons = model.uncons - 1}, dialog 1)
+                                else ({newModel | engine = newEngine, uncons = 0}, dialog 0)
 
         StartGame initData -> let cosmonaut = Cosmonaut "Vasilij" "Pupkin" initData.weight Pilot  initData.maxAcc
                                   newEngine = {oEngine | time = 1, mass = 0, started = False, revers = False, startedTime = 0}
                                   ship = takeFuel (addCosmonaut (unboard model.ship) cosmonaut) 3500
                               in  ({model | started = False, ship = tank ship initData.fuel, u = 0, h = 0, time = 0, acc = 0 }, Cmd.none)
 
-        ChangeFuel value -> let val =  Result.withDefault model.ship.fuel (String.toFloat value)
+        ChangeFuel value -> let val =  Result.withDefault model.ship.fuel <| String.toFloat value
                                 newEngine = if (val > model.ship.fuel)
                                             then {oEngine | mass = model.ship.fuel}
                                             else {oEngine | mass = val}
@@ -191,7 +159,6 @@ update msg model =
 
 -- VIEW
 
-round2 val = toString (toFloat (floor (100 * val)) / 100)
 
 infoView model =
   let revers = if(model.engine.revers) then "revers" else ""
@@ -205,7 +172,7 @@ infoView model =
                 div [class "col s6"] [b [] [text (round2 model.h)] , text " м."] ],
         div [class "row"] [ div [class "col s6"] [text "Скорость" ],
                 div [class "col s6"] [b [] [text (round2 model.u)] , text " м/с"] ],
-        div [class "row"] [ div [class "col s12 offset-s6"] [img [src (srcImg ++ ".png")] []]]
+        div [class "row"] [ div [class "col s12 offset-s6"] [img [src <| srcImg ++ ".png"] []]]
                 
     ]
 massEngineView model =
@@ -225,7 +192,7 @@ massEngineView model =
                              [input [ type' "range"
                                         , H.min "0"
                                         , H.max "100"
-                                        , value (toString model.engine.mass)
+                                        , value <| toString model.engine.mass
                                         , on "change" (Json.map ChangeFuel targetValue) 
                                     ] []
                              ]
@@ -252,7 +219,7 @@ timeEngineView model = div [class "row valign-wrapper"] [
                         , H.min "0.7"
                         , H.max "60"
                         , H.step "0.1"
-                        , value (toString model.engine.time)
+                        , value <| toString model.engine.time
                         , on "change" (Json.map ChangeTime targetValue) 
                     ] []
                 ]
@@ -291,7 +258,7 @@ startEngineView model =
         [button
             [ onClick Start
              , class btnClass
-             , disabled (engineNotActive model)
+             , disabled <| engineNotActive model
             ]
             [ text "ПУСК" ]
         ]

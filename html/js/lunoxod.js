@@ -7668,15 +7668,96 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-var _user$project$Lunaxod$engineNotActive = function (model) {
-	return (_elm_lang$core$Native_Utils.eq(model.started, false) && (!_elm_lang$core$Native_Utils.eq(model.u, 0))) || ((_elm_lang$core$Native_Utils.eq(model.started, false) && _elm_lang$core$Native_Utils.eq(model.engine.mass, 0)) || (!_elm_lang$core$Native_Utils.eq(model.acc, 0)));
-};
-var _user$project$Lunaxod$round2 = function (val) {
+var _user$project$Lunomodel$round2 = function (val) {
 	return _elm_lang$core$Basics$toString(
 		_elm_lang$core$Basics$toFloat(
 			_elm_lang$core$Basics$floor(100 * val)) / 100);
 };
-var _user$project$Lunaxod$infoView = function (model) {
+var _user$project$Lunomodel$freeFall = F2(
+	function (planet, height) {
+		var g = 6.6740831 * Math.pow(10, -11);
+		var h = planet.radius + height;
+		return (planet.mass * g) / Math.pow(h, 2);
+	});
+var _user$project$Lunomodel$getPilot = function (ship) {
+	return A2(
+		_elm_lang$core$List$filter,
+		function (p) {
+			var _p0 = p.role;
+			if (_p0.ctor === 'Pilot') {
+				return true;
+			} else {
+				return false;
+			}
+		},
+		ship.persons);
+};
+var _user$project$Lunomodel$unboard = function (ship) {
+	return _elm_lang$core$Native_Utils.update(
+		ship,
+		{
+			persons: _elm_lang$core$Native_List.fromArray(
+				[])
+		});
+};
+var _user$project$Lunomodel$addCosmonaut = F2(
+	function (ship, cosmonaut) {
+		return _elm_lang$core$Native_Utils.update(
+			ship,
+			{
+				persons: A2(_elm_lang$core$List_ops['::'], cosmonaut, ship.persons)
+			});
+	});
+var _user$project$Lunomodel$tank = F2(
+	function (ship, value) {
+		return _elm_lang$core$Native_Utils.update(
+			ship,
+			{fuel: ship.fuel + value});
+	});
+var _user$project$Lunomodel$takeFuel = F2(
+	function (ship, value) {
+		return (_elm_lang$core$Native_Utils.cmp(ship.fuel - value, 0) < 0) ? _elm_lang$core$Native_Utils.update(
+			ship,
+			{fuel: 0}) : _elm_lang$core$Native_Utils.update(
+			ship,
+			{fuel: ship.fuel - value});
+	});
+var _user$project$Lunomodel$totalMass = function (ship) {
+	return (ship.mass + ship.fuel) + _elm_lang$core$List$sum(
+		A2(
+			_elm_lang$core$List$map,
+			function (_) {
+				return _.mass;
+			},
+			ship.persons));
+};
+var _user$project$Lunomodel$Planet = F2(
+	function (a, b) {
+		return {radius: a, mass: b};
+	});
+var _user$project$Lunomodel$moon = A2(
+	_user$project$Lunomodel$Planet,
+	1738000,
+	7.35 * Math.pow(10, 22));
+var _user$project$Lunomodel$Cosmonaut = F5(
+	function (a, b, c, d, e) {
+		return {firstName: a, lastName: b, mass: c, role: d, maxAcceleration: e};
+	});
+var _user$project$Lunomodel$Spaceship = F4(
+	function (a, b, c, d) {
+		return {mass: a, c: b, fuel: c, persons: d};
+	});
+var _user$project$Lunomodel$Engine = F5(
+	function (a, b, c, d, e) {
+		return {mass: a, time: b, revers: c, startedTime: d, started: e};
+	});
+var _user$project$Lunomodel$Passenger = {ctor: 'Passenger'};
+var _user$project$Lunomodel$Pilot = {ctor: 'Pilot'};
+
+var _user$project$Lunoxod$engineNotActive = function (model) {
+	return (_elm_lang$core$Native_Utils.eq(model.started, false) && (!_elm_lang$core$Native_Utils.eq(model.u, 0))) || ((_elm_lang$core$Native_Utils.eq(model.started, false) && _elm_lang$core$Native_Utils.eq(model.engine.mass, 0)) || (!_elm_lang$core$Native_Utils.eq(model.acc, 0)));
+};
+var _user$project$Lunoxod$infoView = function (model) {
 	var revers = model.engine.revers ? 'revers' : '';
 	var srcImg = _elm_lang$core$Native_Utils.eq(model.acc, 0) ? A2(_elm_lang$core$Basics_ops['++'], 'img/ship', revers) : A2(_elm_lang$core$Basics_ops['++'], 'img/shipEngine', revers);
 	return A2(
@@ -7720,7 +7801,7 @@ var _user$project$Lunaxod$infoView = function (model) {
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Lunaxod$round2(model.time))
+										_user$project$Lunomodel$round2(model.time))
 									])),
 								_elm_lang$html$Html$text(' c.')
 							]))
@@ -7758,7 +7839,7 @@ var _user$project$Lunaxod$infoView = function (model) {
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Lunaxod$round2(model.ship.fuel))
+										_user$project$Lunomodel$round2(model.ship.fuel))
 									])),
 								_elm_lang$html$Html$text(' кг.')
 							]))
@@ -7796,7 +7877,7 @@ var _user$project$Lunaxod$infoView = function (model) {
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Lunaxod$round2(model.h))
+										_user$project$Lunomodel$round2(model.h))
 									])),
 								_elm_lang$html$Html$text(' м.')
 							]))
@@ -7834,7 +7915,7 @@ var _user$project$Lunaxod$infoView = function (model) {
 								_elm_lang$core$Native_List.fromArray(
 									[
 										_elm_lang$html$Html$text(
-										_user$project$Lunaxod$round2(model.u))
+										_user$project$Lunomodel$round2(model.u))
 									])),
 								_elm_lang$html$Html$text(' м/с')
 							]))
@@ -7868,75 +7949,27 @@ var _user$project$Lunaxod$infoView = function (model) {
 					]))
 			]));
 };
-var _user$project$Lunaxod$freeFall = F2(
-	function (planet, height) {
-		var g = 6.6740831 * Math.pow(10, -11);
-		var h = planet.radius + height;
-		return (planet.mass * g) / Math.pow(h, 2);
+var _user$project$Lunoxod$calcNewEngine = F2(
+	function (model, oEngine) {
+		var stTime = _elm_lang$core$Basics$toFloat(oEngine.startedTime);
+		var newModelEngine = model.engine;
+		return (!_elm_lang$core$Native_Utils.eq(newModelEngine.started, true)) ? model.engine : ((_elm_lang$core$Native_Utils.cmp(stTime + 1, newModelEngine.time) < 0) ? _elm_lang$core$Native_Utils.update(
+			newModelEngine,
+			{startedTime: oEngine.startedTime + 1}) : _elm_lang$core$Native_Utils.update(
+			newModelEngine,
+			{startedTime: 0, started: false}));
 	});
-var _user$project$Lunaxod$getPilot = function (ship) {
-	return A2(
-		_elm_lang$core$List$filter,
-		function (p) {
-			var _p0 = p.role;
-			if (_p0.ctor === 'Pilot') {
-				return true;
-			} else {
-				return false;
-			}
-		},
-		ship.persons);
-};
-var _user$project$Lunaxod$unboard = function (ship) {
-	return _elm_lang$core$Native_Utils.update(
-		ship,
-		{
-			persons: _elm_lang$core$Native_List.fromArray(
-				[])
-		});
-};
-var _user$project$Lunaxod$addCosmonaut = F2(
-	function (ship, cosmonaut) {
-		return _elm_lang$core$Native_Utils.update(
-			ship,
-			{
-				persons: A2(_elm_lang$core$List_ops['::'], cosmonaut, ship.persons)
-			});
-	});
-var _user$project$Lunaxod$tank = F2(
-	function (ship, value) {
-		return _elm_lang$core$Native_Utils.update(
-			ship,
-			{fuel: ship.fuel + value});
-	});
-var _user$project$Lunaxod$takeFuel = F2(
-	function (ship, value) {
-		return (_elm_lang$core$Native_Utils.cmp(ship.fuel - value, 0) < 0) ? _elm_lang$core$Native_Utils.update(
-			ship,
-			{fuel: 0}) : _elm_lang$core$Native_Utils.update(
-			ship,
-			{fuel: ship.fuel - value});
-	});
-var _user$project$Lunaxod$totalMass = function (ship) {
-	return (ship.mass + ship.fuel) + _elm_lang$core$List$sum(
-		A2(
-			_elm_lang$core$List$map,
-			function (_) {
-				return _.mass;
-			},
-			ship.persons));
-};
-var _user$project$Lunaxod$run = F3(
+var _user$project$Lunoxod$run = F3(
 	function (mm, q, time) {
 		var engine = mm.engine;
-		var newShip = A2(_user$project$Lunaxod$takeFuel, mm.ship, q * time);
+		var newShip = A2(_user$project$Lunomodel$takeFuel, mm.ship, q * time);
 		var newEngine = (_elm_lang$core$Native_Utils.cmp(newShip.fuel, mm.engine.mass) > 0) ? engine : _elm_lang$core$Native_Utils.update(
 			engine,
 			{mass: newShip.fuel});
 		var newTime = mm.time + time;
-		var newAcc = (q * mm.ship.c) / _user$project$Lunaxod$totalMass(mm.ship);
+		var newAcc = (q * mm.ship.c) / _user$project$Lunomodel$totalMass(mm.ship);
 		var r = mm.engine.revers ? -1 : 1;
-		var gp = A2(_user$project$Lunaxod$freeFall, mm.planet, mm.h);
+		var gp = A2(_user$project$Lunomodel$freeFall, mm.planet, mm.h);
 		var newU = mm.u + (((r * newAcc) - gp) * time);
 		var newH = mm.h + (((mm.u + newU) * time) / 2);
 		var newModel = _elm_lang$core$Native_Utils.update(
@@ -7946,17 +7979,53 @@ var _user$project$Lunaxod$run = F3(
 			mm,
 			{ship: newShip, engine: newEngine}) : newModel;
 	});
-var _user$project$Lunaxod$dialog = _elm_lang$core$Native_Platform.outgoingPort(
+var _user$project$Lunoxod$calcNewModel = function (model) {
+	var oEngine = model.engine;
+	var stTime = _elm_lang$core$Basics$toFloat(oEngine.startedTime);
+	var timeDiff = oEngine.time - stTime;
+	var exTime = (_elm_lang$core$Native_Utils.cmp(timeDiff, 1) > 0) ? 1 : timeDiff;
+	var q = oEngine.mass / oEngine.time;
+	if ((!_elm_lang$core$Native_Utils.eq(oEngine.started, true)) || (_elm_lang$core$Native_Utils.cmp(stTime + 1, oEngine.time) > 0)) {
+		return A3(_user$project$Lunoxod$run, model, 0, 1);
+	} else {
+		var firstRun = A3(_user$project$Lunoxod$run, model, q, exTime);
+		var secondRun = (!_elm_lang$core$Native_Utils.eq(exTime, 1)) ? A3(_user$project$Lunoxod$run, firstRun, 0, 1 - exTime) : firstRun;
+		return _elm_lang$core$Native_Utils.update(
+			secondRun,
+			{acc: firstRun.acc});
+	}
+};
+var _user$project$Lunoxod$calcLanding = F2(
+	function (model, oEngine) {
+		var q = oEngine.mass / oEngine.time;
+		var gp = A2(_user$project$Lunomodel$freeFall, model.planet, 0);
+		var r = oEngine.revers ? -1 : 1;
+		var t = (2 * model.h) / (_elm_lang$core$Basics$sqrt(
+			Math.pow(model.u, 2) + ((2 * model.h) * (gp - (model.acc * r)))) - model.u);
+		return A3(
+			_user$project$Lunoxod$run,
+			_elm_lang$core$Native_Utils.update(
+				model,
+				{
+					ship: A2(
+						_user$project$Lunomodel$tank,
+						model.ship,
+						_elm_lang$core$Basics$abs((t / oEngine.time) * oEngine.mass))
+				}),
+			q,
+			t);
+	});
+var _user$project$Lunoxod$dialog = _elm_lang$core$Native_Platform.outgoingPort(
 	'dialog',
 	function (v) {
 		return v;
 	});
-var _user$project$Lunaxod$finish = _elm_lang$core$Native_Platform.outgoingPort(
+var _user$project$Lunoxod$finish = _elm_lang$core$Native_Platform.outgoingPort(
 	'finish',
 	function (v) {
 		return v;
 	});
-var _user$project$Lunaxod$startGame = _elm_lang$core$Native_Platform.incomingPort(
+var _user$project$Lunoxod$startGame = _elm_lang$core$Native_Platform.incomingPort(
 	'startGame',
 	A2(
 		_elm_lang$core$Json_Decode$andThen,
@@ -7975,131 +8044,566 @@ var _user$project$Lunaxod$startGame = _elm_lang$core$Native_Platform.incomingPor
 						});
 				});
 		}));
-var _user$project$Lunaxod$Planet = F2(
-	function (a, b) {
-		return {radius: a, mass: b};
-	});
-var _user$project$Lunaxod$moon = A2(
-	_user$project$Lunaxod$Planet,
-	1738000,
-	7.35 * Math.pow(10, 22));
-var _user$project$Lunaxod$Cosmonaut = F5(
-	function (a, b, c, d, e) {
-		return {firstName: a, lastName: b, mass: c, role: d, maxAcceleration: e};
-	});
-var _user$project$Lunaxod$Spaceship = F4(
-	function (a, b, c, d) {
-		return {mass: a, c: b, fuel: c, persons: d};
-	});
-var _user$project$Lunaxod$Engine = F5(
-	function (a, b, c, d, e) {
-		return {mass: a, time: b, revers: c, startedTime: d, started: e};
-	});
-var _user$project$Lunaxod$Model = F9(
+var _user$project$Lunoxod$Model = F9(
 	function (a, b, c, d, e, f, g, h, i) {
 		return {started: a, uncons: b, planet: c, ship: d, time: e, h: f, u: g, acc: h, engine: i};
 	});
-var _user$project$Lunaxod$init = {
+var _user$project$Lunoxod$init = {
 	ctor: '_Tuple2',
 	_0: A9(
-		_user$project$Lunaxod$Model,
+		_user$project$Lunoxod$Model,
 		false,
 		0,
-		_user$project$Lunaxod$moon,
+		_user$project$Lunomodel$moon,
 		A4(
-			_user$project$Lunaxod$Spaceship,
-			2000.0,
-			3660.0,
-			0.0,
+			_user$project$Lunomodel$Spaceship,
+			2000,
+			3660,
+			0,
 			_elm_lang$core$Native_List.fromArray(
 				[])),
 		0,
 		0,
 		0,
 		0,
-		A5(_user$project$Lunaxod$Engine, 0, 1, false, 0, false)),
+		A5(_user$project$Lunomodel$Engine, 0, 1, false, 0, false)),
 	_1: _elm_lang$core$Platform_Cmd$none
 };
-var _user$project$Lunaxod$InitData = F3(
+var _user$project$Lunoxod$InitData = F3(
 	function (a, b, c) {
 		return {fuel: a, maxAcc: b, weight: c};
 	});
-var _user$project$Lunaxod$Passenger = {ctor: 'Passenger'};
-var _user$project$Lunaxod$Pilot = {ctor: 'Pilot'};
-var _user$project$Lunaxod$update = F2(
+var _user$project$Lunoxod$Tick = function (a) {
+	return {ctor: 'Tick', _0: a};
+};
+var _user$project$Lunoxod$StartGame = function (a) {
+	return {ctor: 'StartGame', _0: a};
+};
+var _user$project$Lunoxod$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_user$project$Lunoxod$startGame(_user$project$Lunoxod$StartGame),
+				A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Lunoxod$Tick)
+			]));
+};
+var _user$project$Lunoxod$DecFuel = {ctor: 'DecFuel'};
+var _user$project$Lunoxod$IncFuel = {ctor: 'IncFuel'};
+var _user$project$Lunoxod$DecTime = {ctor: 'DecTime'};
+var _user$project$Lunoxod$IncTime = {ctor: 'IncTime'};
+var _user$project$Lunoxod$ChangeRevers = function (a) {
+	return {ctor: 'ChangeRevers', _0: a};
+};
+var _user$project$Lunoxod$reversEngineView = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('row')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s2 chip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Реверс тяги')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s10')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('switch')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$label,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('Выкл.'),
+										A2(
+										_elm_lang$html$Html$input,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$type$('checkbox'),
+												_elm_lang$html$Html_Attributes$checked(model.engine.revers),
+												A2(
+												_elm_lang$html$Html_Events$on,
+												'change',
+												A2(_elm_lang$core$Json_Decode$map, _user$project$Lunoxod$ChangeRevers, _elm_lang$html$Html_Events$targetValue))
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[])),
+										A2(
+										_elm_lang$html$Html$span,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('lever')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[])),
+										_elm_lang$html$Html$text('Вкл.')
+									]))
+							]))
+					]))
+			]));
+};
+var _user$project$Lunoxod$ChangeFuel = function (a) {
+	return {ctor: 'ChangeFuel', _0: a};
+};
+var _user$project$Lunoxod$massEngineView = function (model) {
+	var newModel = A2(_elm_lang$core$Debug$log, 'massEngineView', model);
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('row valign-wrapper')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s2 valign chip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Расход: '),
+						A2(
+						_elm_lang$html$Html$b,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('large')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								_elm_lang$core$Basics$toString(model.engine.mass))
+							])),
+						_elm_lang$html$Html$text(' кг.')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s10 valign')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('row valign-wrapper')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$a,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('btn-floating'),
+												_elm_lang$html$Html_Events$onClick(_user$project$Lunoxod$DecFuel)
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$i,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$class('material-icons')
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html$text('fast_rewind')
+													]))
+											]))
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('0')
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s8 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$p,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('range-field')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$input,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$type$('range'),
+														_elm_lang$html$Html_Attributes$min('0'),
+														_elm_lang$html$Html_Attributes$max('100'),
+														_elm_lang$html$Html_Attributes$value(
+														_elm_lang$core$Basics$toString(model.engine.mass)),
+														A2(
+														_elm_lang$html$Html_Events$on,
+														'change',
+														A2(_elm_lang$core$Json_Decode$map, _user$project$Lunoxod$ChangeFuel, _elm_lang$html$Html_Events$targetValue))
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[]))
+											]))
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('100')
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$a,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('btn-floating'),
+												_elm_lang$html$Html_Events$onClick(_user$project$Lunoxod$IncFuel)
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$i,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$class('material-icons')
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html$text('fast_forward')
+													]))
+											]))
+									]))
+							]))
+					]))
+			]));
+};
+var _user$project$Lunoxod$Start = {ctor: 'Start'};
+var _user$project$Lunoxod$startEngineView = function (model) {
+	var defaultClass = 'waves-effect waves-light btn-large red';
+	var btnClass = _user$project$Lunoxod$engineNotActive(model) ? A2(_elm_lang$core$Basics_ops['++'], defaultClass, ' disabled') : defaultClass;
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('row')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s12')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$button,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Events$onClick(_user$project$Lunoxod$Start),
+								_elm_lang$html$Html_Attributes$class(btnClass),
+								_elm_lang$html$Html_Attributes$disabled(
+								_user$project$Lunoxod$engineNotActive(model))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('ПУСК')
+							]))
+					]))
+			]));
+};
+var _user$project$Lunoxod$ChangeTime = function (a) {
+	return {ctor: 'ChangeTime', _0: a};
+};
+var _user$project$Lunoxod$timeEngineView = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('row valign-wrapper')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s2 valign chip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('За время: '),
+						A2(
+						_elm_lang$html$Html$b,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(
+								_elm_lang$core$Basics$toString(model.engine.time))
+							])),
+						_elm_lang$html$Html$text(' c.')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s10 valign')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('row valign-wrapper')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$a,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('btn-floating'),
+												_elm_lang$html$Html_Events$onClick(_user$project$Lunoxod$DecTime)
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$i,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$class('material-icons')
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html$text('fast_rewind')
+													]))
+											]))
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('0.7')
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s8 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$p,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('range-field')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$input,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$type$('range'),
+														_elm_lang$html$Html_Attributes$min('0.7'),
+														_elm_lang$html$Html_Attributes$max('60'),
+														_elm_lang$html$Html_Attributes$step('0.1'),
+														_elm_lang$html$Html_Attributes$value(
+														_elm_lang$core$Basics$toString(model.engine.time)),
+														A2(
+														_elm_lang$html$Html_Events$on,
+														'change',
+														A2(_elm_lang$core$Json_Decode$map, _user$project$Lunoxod$ChangeTime, _elm_lang$html$Html_Events$targetValue))
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[]))
+											]))
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('60')
+									])),
+								A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('col s1 valign')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$a,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('btn-floating'),
+												_elm_lang$html$Html_Events$onClick(_user$project$Lunoxod$IncTime)
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												A2(
+												_elm_lang$html$Html$i,
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html_Attributes$class('material-icons')
+													]),
+												_elm_lang$core$Native_List.fromArray(
+													[
+														_elm_lang$html$Html$text('fast_forward')
+													]))
+											]))
+									]))
+							]))
+					]))
+			]));
+};
+var _user$project$Lunoxod$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('row')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_user$project$Lunoxod$infoView(model),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s8')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_user$project$Lunoxod$massEngineView(model),
+						_user$project$Lunoxod$timeEngineView(model),
+						_user$project$Lunoxod$reversEngineView(model),
+						_user$project$Lunoxod$startEngineView(model)
+					]))
+			]));
+};
+var _user$project$Lunoxod$Flying = {ctor: 'Flying'};
+var _user$project$Lunoxod$Unconscious = function (a) {
+	return {ctor: 'Unconscious', _0: a};
+};
+var _user$project$Lunoxod$Landed = {ctor: 'Landed'};
+var _user$project$Lunoxod$NotStarted = {ctor: 'NotStarted'};
+var _user$project$Lunoxod$getState = function (model) {
+	var pilot = A2(
+		_elm_lang$core$Maybe$withDefault,
+		A5(_user$project$Lunomodel$Cosmonaut, '', '', 150, _user$project$Lunomodel$Pilot, 3 * 9.81),
+		_elm_lang$core$List$head(
+			_user$project$Lunomodel$getPilot(model.ship)));
+	var maxAcc = pilot.maxAcceleration;
+	var divAcc = model.acc - maxAcc;
+	return _elm_lang$core$Native_Utils.eq(model.started, false) ? _user$project$Lunoxod$NotStarted : ((_elm_lang$core$Native_Utils.cmp(model.h, 0) < 0) ? _user$project$Lunoxod$Landed : ((_elm_lang$core$Native_Utils.cmp(divAcc, 0) > 0) ? _user$project$Lunoxod$Unconscious(divAcc) : _user$project$Lunoxod$Flying));
+};
+var _user$project$Lunoxod$update = F2(
 	function (msg, model) {
 		var oEngine = model.engine;
-		var _p1 = msg;
-		switch (_p1.ctor) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
 			case 'Tick':
-				var engine = model.engine;
-				var stTime = _elm_lang$core$Basics$toFloat(engine.startedTime);
-				var timeDiff = engine.time - stTime;
-				if (_elm_lang$core$Native_Utils.eq(model.started, false)) {
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-				} else {
-					var pilot = A2(
-						_elm_lang$core$Maybe$withDefault,
-						A5(_user$project$Lunaxod$Cosmonaut, '', '', 150, _user$project$Lunaxod$Pilot, 3 * 9.81),
-						_elm_lang$core$List$head(
-							_user$project$Lunaxod$getPilot(model.ship)));
-					var maxAcc = pilot.maxAcceleration;
-					var exTime = (_elm_lang$core$Native_Utils.cmp(timeDiff, 1) > 0) ? 1 : timeDiff;
-					var q = engine.mass / engine.time;
-					var newModel = function () {
-						if ((!_elm_lang$core$Native_Utils.eq(engine.started, true)) || (_elm_lang$core$Native_Utils.cmp(stTime + 1, engine.time) > 0)) {
-							return A3(_user$project$Lunaxod$run, model, 0, 1);
-						} else {
-							var firstRun = A3(_user$project$Lunaxod$run, model, q, exTime);
-							var secondRun = (!_elm_lang$core$Native_Utils.eq(exTime, 1)) ? A3(_user$project$Lunaxod$run, firstRun, 0, 1 - exTime) : firstRun;
-							return _elm_lang$core$Native_Utils.update(
-								secondRun,
-								{acc: firstRun.acc});
-						}
-					}();
-					var newEngine = function () {
-						var newModelEngine = newModel.engine;
-						return (!_elm_lang$core$Native_Utils.eq(newModelEngine.started, true)) ? newModel.engine : ((_elm_lang$core$Native_Utils.cmp(stTime + 1, newModelEngine.time) < 0) ? _elm_lang$core$Native_Utils.update(
-							newModelEngine,
-							{startedTime: engine.startedTime + 1}) : _elm_lang$core$Native_Utils.update(
-							newModelEngine,
-							{startedTime: 0, started: false}));
-					}();
-					var divAcc = newModel.acc - maxAcc;
-					if (_elm_lang$core$Native_Utils.cmp(newModel.h, 0) < 0) {
-						var gp = A2(_user$project$Lunaxod$freeFall, model.planet, 0);
-						var r = model.engine.revers ? -1 : 1;
-						var t = (2 * newModel.h) / (_elm_lang$core$Basics$sqrt(
-							Math.pow(newModel.u, 2) + ((2 * newModel.h) * (gp - (newModel.acc * r)))) - newModel.u);
-						var finModel = A3(
-							_user$project$Lunaxod$run,
-							_elm_lang$core$Native_Utils.update(
-								newModel,
-								{
-									ship: A2(
-										_user$project$Lunaxod$tank,
-										model.ship,
-										_elm_lang$core$Basics$abs((t / model.engine.time) * model.engine.mass))
-								}),
-							q,
-							t);
+				var newModel = _user$project$Lunoxod$calcNewModel(model);
+				var newEngine = A2(_user$project$Lunoxod$calcNewEngine, newModel, oEngine);
+				var _p1 = _user$project$Lunoxod$getState(newModel);
+				switch (_p1.ctor) {
+					case 'NotStarted':
+						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+					case 'Landed':
+						var finModel = A2(_user$project$Lunoxod$calcLanding, newModel, oEngine);
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								finModel,
 								{h: 0, acc: 0, started: false}),
-							_1: _user$project$Lunaxod$finish(
-								_user$project$Lunaxod$round2(finModel.u))
+							_1: _user$project$Lunoxod$finish(
+								_user$project$Lunomodel$round2(finModel.u))
 						};
-					} else {
-						var m1 = A2(_elm_lang$core$Debug$log, 'newModel', newModel);
-						return (_elm_lang$core$Native_Utils.cmp(newModel.acc, maxAcc) > 0) ? {
+					case 'Unconscious':
+						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								newModel,
-								{engine: newEngine, uncons: divAcc}),
-							_1: _user$project$Lunaxod$dialog(1)
-						} : (_elm_lang$core$Native_Utils.eq(model.uncons, 0) ? {
+								{engine: newEngine, uncons: _p1._0}),
+							_1: _user$project$Lunoxod$dialog(1)
+						};
+					default:
+						return _elm_lang$core$Native_Utils.eq(model.uncons, 0) ? {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								newModel,
@@ -8110,27 +8614,26 @@ var _user$project$Lunaxod$update = F2(
 							_0: _elm_lang$core$Native_Utils.update(
 								newModel,
 								{engine: newEngine, uncons: model.uncons - 1}),
-							_1: _user$project$Lunaxod$dialog(1)
+							_1: _user$project$Lunoxod$dialog(1)
 						} : {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								newModel,
 								{engine: newEngine, uncons: 0}),
-							_1: _user$project$Lunaxod$dialog(0)
-						}));
-					}
+							_1: _user$project$Lunoxod$dialog(0)
+						});
 				}
 			case 'StartGame':
-				var _p2 = _p1._0;
+				var _p2 = _p0._0;
 				var newEngine = _elm_lang$core$Native_Utils.update(
 					oEngine,
 					{time: 1, mass: 0, started: false, revers: false, startedTime: 0});
-				var cosmonaut = A5(_user$project$Lunaxod$Cosmonaut, 'Vasilij', 'Pupkin', _p2.weight, _user$project$Lunaxod$Pilot, _p2.maxAcc);
+				var cosmonaut = A5(_user$project$Lunomodel$Cosmonaut, 'Vasilij', 'Pupkin', _p2.weight, _user$project$Lunomodel$Pilot, _p2.maxAcc);
 				var ship = A2(
-					_user$project$Lunaxod$takeFuel,
+					_user$project$Lunomodel$takeFuel,
 					A2(
-						_user$project$Lunaxod$addCosmonaut,
-						_user$project$Lunaxod$unboard(model.ship),
+						_user$project$Lunomodel$addCosmonaut,
+						_user$project$Lunomodel$unboard(model.ship),
 						cosmonaut),
 					3500);
 				return {
@@ -8139,7 +8642,7 @@ var _user$project$Lunaxod$update = F2(
 						model,
 						{
 							started: false,
-							ship: A2(_user$project$Lunaxod$tank, ship, _p2.fuel),
+							ship: A2(_user$project$Lunomodel$tank, ship, _p2.fuel),
 							u: 0,
 							h: 0,
 							time: 0,
@@ -8151,7 +8654,7 @@ var _user$project$Lunaxod$update = F2(
 				var val = A2(
 					_elm_lang$core$Result$withDefault,
 					model.ship.fuel,
-					_elm_lang$core$String$toFloat(_p1._0));
+					_elm_lang$core$String$toFloat(_p0._0));
 				var newEngine = (_elm_lang$core$Native_Utils.cmp(val, model.ship.fuel) > 0) ? _elm_lang$core$Native_Utils.update(
 					oEngine,
 					{mass: model.ship.fuel}) : _elm_lang$core$Native_Utils.update(
@@ -8221,7 +8724,7 @@ var _user$project$Lunaxod$update = F2(
 				var val = A2(
 					_elm_lang$core$Result$withDefault,
 					0.7,
-					_elm_lang$core$String$toFloat(_p1._0));
+					_elm_lang$core$String$toFloat(_p0._0));
 				var newEngine = _elm_lang$core$Native_Utils.update(
 					oEngine,
 					{time: val});
@@ -8258,497 +8761,14 @@ var _user$project$Lunaxod$update = F2(
 				};
 		}
 	});
-var _user$project$Lunaxod$Tick = function (a) {
-	return {ctor: 'Tick', _0: a};
-};
-var _user$project$Lunaxod$StartGame = function (a) {
-	return {ctor: 'StartGame', _0: a};
-};
-var _user$project$Lunaxod$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$batch(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_user$project$Lunaxod$startGame(_user$project$Lunaxod$StartGame),
-				A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second, _user$project$Lunaxod$Tick)
-			]));
-};
-var _user$project$Lunaxod$DecFuel = {ctor: 'DecFuel'};
-var _user$project$Lunaxod$IncFuel = {ctor: 'IncFuel'};
-var _user$project$Lunaxod$DecTime = {ctor: 'DecTime'};
-var _user$project$Lunaxod$IncTime = {ctor: 'IncTime'};
-var _user$project$Lunaxod$ChangeRevers = function (a) {
-	return {ctor: 'ChangeRevers', _0: a};
-};
-var _user$project$Lunaxod$reversEngineView = function (model) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('row')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s2 chip')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Реверс тяги')
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s10')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('switch')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$label,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('Выкл.'),
-										A2(
-										_elm_lang$html$Html$input,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$type$('checkbox'),
-												_elm_lang$html$Html_Attributes$checked(model.engine.revers),
-												A2(
-												_elm_lang$html$Html_Events$on,
-												'change',
-												A2(_elm_lang$core$Json_Decode$map, _user$project$Lunaxod$ChangeRevers, _elm_lang$html$Html_Events$targetValue))
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[])),
-										A2(
-										_elm_lang$html$Html$span,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('lever')
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[])),
-										_elm_lang$html$Html$text('Вкл.')
-									]))
-							]))
-					]))
-			]));
-};
-var _user$project$Lunaxod$ChangeFuel = function (a) {
-	return {ctor: 'ChangeFuel', _0: a};
-};
-var _user$project$Lunaxod$massEngineView = function (model) {
-	var newModel = A2(_elm_lang$core$Debug$log, 'massEngineView', model);
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('row valign-wrapper')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s2 valign chip')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Расход: '),
-						A2(
-						_elm_lang$html$Html$b,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('large')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(
-								_elm_lang$core$Basics$toString(model.engine.mass))
-							])),
-						_elm_lang$html$Html$text(' кг.')
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s10 valign')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('row valign-wrapper')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$a,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('btn-floating'),
-												_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$DecFuel)
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$i,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$class('material-icons')
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html$text('fast_rewind')
-													]))
-											]))
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('0')
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s8 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$p,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('range-field')
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$input,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$type$('range'),
-														_elm_lang$html$Html_Attributes$min('0'),
-														_elm_lang$html$Html_Attributes$max('100'),
-														_elm_lang$html$Html_Attributes$value(
-														_elm_lang$core$Basics$toString(model.engine.mass)),
-														A2(
-														_elm_lang$html$Html_Events$on,
-														'change',
-														A2(_elm_lang$core$Json_Decode$map, _user$project$Lunaxod$ChangeFuel, _elm_lang$html$Html_Events$targetValue))
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[]))
-											]))
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('100')
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$a,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('btn-floating'),
-												_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$IncFuel)
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$i,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$class('material-icons')
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html$text('fast_forward')
-													]))
-											]))
-									]))
-							]))
-					]))
-			]));
-};
-var _user$project$Lunaxod$Start = {ctor: 'Start'};
-var _user$project$Lunaxod$startEngineView = function (model) {
-	var defaultClass = 'waves-effect waves-light btn-large red';
-	var btnClass = _user$project$Lunaxod$engineNotActive(model) ? A2(_elm_lang$core$Basics_ops['++'], defaultClass, ' disabled') : defaultClass;
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('row')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s12')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$Start),
-								_elm_lang$html$Html_Attributes$class(btnClass),
-								_elm_lang$html$Html_Attributes$disabled(
-								_user$project$Lunaxod$engineNotActive(model))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('ПУСК')
-							]))
-					]))
-			]));
-};
-var _user$project$Lunaxod$ChangeTime = function (a) {
-	return {ctor: 'ChangeTime', _0: a};
-};
-var _user$project$Lunaxod$timeEngineView = function (model) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('row valign-wrapper')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s2 valign chip')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('За время: '),
-						A2(
-						_elm_lang$html$Html$b,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(
-								_elm_lang$core$Basics$toString(model.engine.time))
-							])),
-						_elm_lang$html$Html$text(' c.')
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s10 valign')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('row valign-wrapper')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$a,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('btn-floating'),
-												_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$DecTime)
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$i,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$class('material-icons')
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html$text('fast_rewind')
-													]))
-											]))
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('0.7')
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s8 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$p,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('range-field')
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$input,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$type$('range'),
-														_elm_lang$html$Html_Attributes$min('0.7'),
-														_elm_lang$html$Html_Attributes$max('60'),
-														_elm_lang$html$Html_Attributes$step('0.1'),
-														_elm_lang$html$Html_Attributes$value(
-														_elm_lang$core$Basics$toString(model.engine.time)),
-														A2(
-														_elm_lang$html$Html_Events$on,
-														'change',
-														A2(_elm_lang$core$Json_Decode$map, _user$project$Lunaxod$ChangeTime, _elm_lang$html$Html_Events$targetValue))
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[]))
-											]))
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('60')
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('col s1 valign')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html$a,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('btn-floating'),
-												_elm_lang$html$Html_Events$onClick(_user$project$Lunaxod$IncTime)
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[
-												A2(
-												_elm_lang$html$Html$i,
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html_Attributes$class('material-icons')
-													]),
-												_elm_lang$core$Native_List.fromArray(
-													[
-														_elm_lang$html$Html$text('fast_forward')
-													]))
-											]))
-									]))
-							]))
-					]))
-			]));
-};
-var _user$project$Lunaxod$view = function (model) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('row')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_user$project$Lunaxod$infoView(model),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('col s8')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_user$project$Lunaxod$massEngineView(model),
-						_user$project$Lunaxod$timeEngineView(model),
-						_user$project$Lunaxod$reversEngineView(model),
-						_user$project$Lunaxod$startEngineView(model)
-					]))
-			]));
-};
-var _user$project$Lunaxod$main = {
+var _user$project$Lunoxod$main = {
 	main: _elm_lang$html$Html_App$program(
-		{init: _user$project$Lunaxod$init, view: _user$project$Lunaxod$view, update: _user$project$Lunaxod$update, subscriptions: _user$project$Lunaxod$subscriptions})
+		{init: _user$project$Lunoxod$init, view: _user$project$Lunoxod$view, update: _user$project$Lunoxod$update, subscriptions: _user$project$Lunoxod$subscriptions})
 };
 
 var Elm = {};
-Elm['Lunaxod'] = Elm['Lunaxod'] || {};
-_elm_lang$core$Native_Platform.addPublicModule(Elm['Lunaxod'], 'Lunaxod', typeof _user$project$Lunaxod$main === 'undefined' ? null : _user$project$Lunaxod$main);
+Elm['Lunoxod'] = Elm['Lunoxod'] || {};
+_elm_lang$core$Native_Platform.addPublicModule(Elm['Lunoxod'], 'Lunoxod', typeof _user$project$Lunoxod$main === 'undefined' ? null : _user$project$Lunoxod$main);
 
 if (typeof define === "function" && define['amd'])
 {

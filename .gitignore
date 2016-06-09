@@ -3,3 +3,7 @@
 
 # utput directories
 elm-stuff
+.idea
+lunoxod.iml
+*.xml
+*.iml
