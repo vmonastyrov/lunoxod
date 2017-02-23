@@ -2,7 +2,6 @@ port module Lunoxod exposing (..)
 
 import Html exposing (..)
 import Html.Attributes as H exposing (..)
-import Html.App as Html
 import Html.Events as E exposing (..)
 import Debug
 import Json.Decode as Json
@@ -95,7 +94,7 @@ calcLanding model oEngine =
       gp = freeFall model.planet 0
       q  = oEngine.mass / oEngine.time
       t  = 2 * model.h / (sqrt (model.u ^ 2 + 2 * model.h * (gp - model.acc * r)) - model.u)
-      in run {model | ship = tank model.ship (abs <| t / oEngine.time * oEngine.mass)} q t
+  in run {model | ship = tank model.ship (abs <| t / oEngine.time * oEngine.mass)} q t
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =  
@@ -189,7 +188,7 @@ massEngineView model =
                    , div [class "col s1 valign"] [text "0"]
                    , div [class "col s8 valign"]
                          [ p [class "range-field"]
-                             [input [ type' "range"
+                             [input [ type_ "range"
                                         , H.min "0"
                                         , H.max "100"
                                         , value <| toString model.engine.mass
@@ -215,7 +214,7 @@ timeEngineView model = div [class "row valign-wrapper"] [
           , div [class "col s1 valign"] [text "0.7"]
           , div[class "col s8 valign"]
             [p [class "range-field"]
-                [ input [ type' "range"
+                [ input [ type_ "range"
                         , H.min "0.7"
                         , H.max "60"
                         , H.step "0.1"
@@ -237,7 +236,7 @@ reversEngineView model = div [class "row"] [
       [ label []
          [   text "Выкл."
            , input
-               [  type' "checkbox"
+               [  type_ "checkbox"
                 , checked model.engine.revers
                 , on "change" (Json.map ChangeRevers targetValue)]
                []
