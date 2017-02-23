@@ -35,6 +35,7 @@ init = (Model False 0 moon (Spaceship 2000 3660 0 []) 0 0 0 0 (Engine 0 1 False 
 
 -- UPDATE
 
+run : Model -> Float -> Float -> Model
 run mm q time =
   let gp  = freeFall mm.planet mm.h
       r   = if (mm.engine.revers) then -1 else 1
@@ -70,6 +71,7 @@ getState model = let pilot    = Maybe.withDefault (Cosmonaut "" "" 150 Pilot (3 
                         else if (divAcc > 0 ) then Unconscious divAcc
                              else Flying
                                   
+calcNewModel : Model -> Model
 calcNewModel model =
   let oEngine  = model.engine
       stTime   = toFloat oEngine.startedTime
@@ -81,6 +83,7 @@ calcNewModel model =
                               secondRun = if (exTime /= 1) then run firstRun 0 (1 - exTime) else firstRun
                           in {secondRun | acc = firstRun.acc}
 
+calcNewEngine : Model -> Engine -> Engine 
 calcNewEngine model oEngine =
   let newModelEngine = model.engine
       stTime   = toFloat oEngine.startedTime
@@ -89,6 +92,7 @@ calcNewEngine model oEngine =
        then {newModelEngine | startedTime = oEngine.startedTime + 1}
        else {newModelEngine | startedTime = 0, started = False}
 
+calcLanding : Model -> Engine -> Model
 calcLanding model oEngine =
   let r  = if (oEngine.revers) then -1 else 1
       gp = freeFall model.planet 0
@@ -159,6 +163,7 @@ update msg model =
 -- VIEW
 
 
+infoView : Model -> Html Msg
 infoView model =
   let revers = if(model.engine.revers) then "revers" else ""
       srcImg = if (model.acc == 0 ) then "img/ship" ++ revers else "img/shipEngine" ++ revers 
@@ -174,6 +179,8 @@ infoView model =
         div [class "row"] [ div [class "col s12 offset-s6"] [img [src <| srcImg ++ ".png"] []]]
                 
     ]
+
+massEngineView : Model -> Html Msg
 massEngineView model =
   let newModel = Debug.log "massEngineView" model 
   in  div [class "row valign-wrapper"] [
@@ -202,6 +209,7 @@ massEngineView model =
            ]
    ]
 
+timeEngineView : Model -> Html Msg
 timeEngineView model = div [class "row valign-wrapper"] [
   div [class "col s2 valign chip"]
     [text "За время: "
@@ -229,6 +237,7 @@ timeEngineView model = div [class "row valign-wrapper"] [
     ]
  ]
 
+reversEngineView : Model -> Html Msg
 reversEngineView model = div [class "row"] [
     div [class "col s2 chip"] [text "Реверс тяги"]
   , div [class "col s10"]
@@ -246,8 +255,10 @@ reversEngineView model = div [class "row"] [
     ]
   ]
   
+engineNotActive: Model -> Bool
 engineNotActive model = (model.started == False && model.u /= 0) || (model.started == False &&  model.engine.mass == 0) || model.acc /= 0 
   
+startEngineView : Model -> Html Msg
 startEngineView model =
   let defaultClass = "waves-effect waves-light btn-large red"
       btnClass = if (engineNotActive model) then defaultClass ++ " disabled" else defaultClass
